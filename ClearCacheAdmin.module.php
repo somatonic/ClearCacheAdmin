@@ -18,7 +18,7 @@ class ClearCacheAdmin extends Process{
         return array(
             'title' => 'Clear Cache Admin',
             'summary' => 'Tool that helps you clear page cache.',
-            'version' => 2,
+            'version' => 3,
             'author' => 'Soma',
             'icon' => 'gear',
             'page' => array(
@@ -33,7 +33,6 @@ class ClearCacheAdmin extends Process{
         );
     }
 
-
     public function ___execute(){
 
         $modules = $this->wire("modules");
@@ -45,6 +44,9 @@ class ClearCacheAdmin extends Process{
         $form = $modules->InputfieldForm;
         $form->attr("action", "./");
         $submit = $modules->InputfieldSubmit;
+        $submit->attr("name", "submitpagecache");
+        $submit->attr("value", __("Clear now"));
+        $submit->showIf = "clearCache=1";
         $form->add($inputfields);
         $form->add($submit);
         $out .= $form->render();
@@ -55,6 +57,9 @@ class ClearCacheAdmin extends Process{
         $form = $modules->InputfieldForm;
         $form->attr("action", "./");
         $submit = $modules->InputfieldSubmit;
+        $submit->attr("name", "submitmarkupcache");
+        $submit->attr("value", __("Clear now"));
+        $submit->showIf = "_clearCache=1";
         $form->add($inputfields);
         $form->add($submit);
         $out .= $form->render();
@@ -68,6 +73,7 @@ class ClearCacheAdmin extends Process{
 
                 $form = $modules->InputfieldForm;
                 $form->attr("action", "./clearwirecache");
+                $form->attr("id", "clearwirecache");
 
                 $table = $modules->MarkupAdminDataTable;
                 $wireCacheID = "wirecachetable";
@@ -100,6 +106,8 @@ class ClearCacheAdmin extends Process{
                 $tableMarkup->value .= $toggleBtn;
                 $form->add($tableMarkup);
                 $submit = $modules->InputfieldSubmit;
+                $submit->attr("name", "submitwirecache");
+                $submit->attr("value", __("Clear now"));
                 $form->add($submit);
                 $out .= $form->render();
 
@@ -122,6 +130,7 @@ class ClearCacheAdmin extends Process{
         if(count($cacheDirs)){
             $form = $modules->InputfieldForm;
             $form->attr("action", "./clearcachedirs");
+            $form->attr("id", "clearcachedirs");
             $f = $modules->InputfieldMarkup;
             $f->label = __("Clear other files or directories?");
             $f->notes = __("Other files and directories as found in site/assets/cache/. They will get deleted recursively.");
@@ -133,6 +142,8 @@ class ClearCacheAdmin extends Process{
             }
             $form->add($f);
             $submit = $modules->InputfieldSubmit;
+            $submit->attr("name", "submitfiles");
+            $submit->attr("value", __("Clear now"));
             $form->add($submit);
             $out .= $form->render();
         }
@@ -141,7 +152,6 @@ class ClearCacheAdmin extends Process{
         return $out;
 
     }
-
 
     public function ___executeClearPageCache(){
         $this->wire('input')->post->clearCache = 1;
@@ -157,7 +167,6 @@ class ClearCacheAdmin extends Process{
         $this->message(sprintf(__("Cleared %d MarkupCache files and dirs."), $numFiles));
         $modules->session->redirect($this->wire("page")->url);
     }
-
 
     public function ___executeClearWireCache(){
         $modules = $this->wire("modules");
@@ -200,7 +209,6 @@ class ClearCacheAdmin extends Process{
 
         $modules->session->redirect($this->wire("page")->url);
     }
-
 
     public function ___executeNavJson(array $options = array()){
 
@@ -278,8 +286,6 @@ class ClearCacheAdmin extends Process{
         return $dirs;
     }
 
-
-
     protected function getExpiringWireCaches(){
         $wireCache = $this->wire("cache")->getInfo(false);
         $expiringCache = array();
@@ -294,3 +300,4 @@ class ClearCacheAdmin extends Process{
     }
 
 }
+

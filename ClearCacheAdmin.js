@@ -15,6 +15,25 @@
             }
         });
 
+        var $submitFiles = $("#wrap_Inputfield_submitfiles").hide();
+        $('#clearcachedirs').on("change", function(){
+            $checkboxes = $(this).find("input[type=checkbox]:checked");
+            if($checkboxes.length){
+                $submitFiles.fadeIn();
+            } else {
+                $submitFiles.fadeOut();
+            }
+        });
+
+        var $submitWireCache = $("#wrap_Inputfield_submitwirecache").hide();
+        $('#clearwirecache').on("change", function(){
+            $checkboxes = $(this).find("input[type=checkbox]:checked");
+            if($checkboxes.length){
+                $submitWireCache.fadeIn();
+            } else {
+                $submitWireCache.fadeOut();
+            }
+        });
     });
 
 })(jQuery);
