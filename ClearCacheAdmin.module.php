@@ -8,6 +8,8 @@
 
 class ClearCacheAdmin extends Process{
 
+    const exludeCacheDirFiles = array("Page", "MarkupHTMLPurifier", "MarkupCache");
+
     /**
      * Return information about this module (required)
      *
@@ -16,8 +18,7 @@ class ClearCacheAdmin extends Process{
         return array(
             'title' => 'Clear Cache Admin',
             'summary' => 'Tool that helps you clear page cache.',
-            'version' => 1,
-            'href' => "https://github.com/somatonic/ClearCacheAdmin",
+            'version' => 2,
             'author' => 'Soma',
             'icon' => 'gear',
             'page' => array(
@@ -87,8 +88,12 @@ class ClearCacheAdmin extends Process{
                 }
 
                 $tableMarkup = $modules->InputfieldMarkup;
-                $tableMarkup->label = __('Delete WireCache ($cache)');
-                $toggleBtn = "<label><input class='toggle_all' data-target='$wireCacheID' type='checkbox'> " . __("toggle all") . "</label><br/>";
+                $tableMarkup->label = __('Clear the WireCache ($cache)');
+                $tableMarkup->notes = __("As found in the wire cache DB table except those that never expire. (r)");
+                $toggleBtn = "<label>";
+                $toggleBtn .= "<input class='toggle_all' data-target='$wireCacheID' type='checkbox'> ";
+                $toggleBtn .= __("toggle all");
+                $toggleBtn .= "</label><br/>";
                 $tableMarkup->value = "";
                 if(count($expiringCaches) > 20) $tableMarkup->value .= $toggleBtn;
                 $tableMarkup->value .= $table->render();
@@ -103,13 +108,35 @@ class ClearCacheAdmin extends Process{
                 $form = $modules->InputfieldForm;
                 $form->attr("action", "./");
                 $tableMarkup = $modules->InputfieldMarkup;
-                $tableMarkup->label = __('Delete WireCache ($cache)');
+                $tableMarkup->label = __('Clear the WireCache ($cache)');
                 $tableMarkup->value = __("No Wire Caches found");
                 $form->add($tableMarkup);
                 $out .= $form->render();
+
             }
 
         }
+
+        // other paths in cache dir, some excluded
+        $cacheDirs = $this->getCacheDirFiles();
+        if(count($cacheDirs)){
+            $form = $modules->InputfieldForm;
+            $form->attr("action", "./clearcachedirs");
+            $f = $modules->InputfieldMarkup;
+            $f->label = __("Clear other files or directories?");
+            $f->notes = __("Other files and directories as found in site/assets/cache/. They will get deleted recursively.");
+            foreach($cacheDirs as $filename => $cd){
+                $f->value .= "<label>";
+                $f->value .= "<input type='checkbox' name='dirs[$filename]' value='1'/>";
+                $f->value .= " site/assets/cache/$filename [{$cd['type']}]";
+                $f->value .= "</label>";
+            }
+            $form->add($f);
+            $submit = $modules->InputfieldSubmit;
+            $form->add($submit);
+            $out .= $form->render();
+        }
+
 
         return $out;
 
@@ -151,6 +178,29 @@ class ClearCacheAdmin extends Process{
         $modules->session->redirect($this->wire("page")->url);
     }
 
+    public function ___executeClearCacheDirs(){
+        $modules = $this->wire("modules");
+        $dirs = $this->wire("input")->post->dirs;
+        $urlSeg = $this->wire("input")->urlSegment2;
+        if(!$dirs && $urlSeg) $dirs = array("$urlSeg" => "1");
+
+        if(count($dirs)){
+            foreach($dirs as $filename => $v){
+                $path = $this->wire('config')->paths->cache . "/" . $filename;
+                if(!file_exists($path)) continue;
+                if(is_dir($path)) {
+                    wireRmdir($path, true);
+                    $this->message(sprintf(__("Cleared directory %s"), $path));
+                } else {
+                    @unlink($path);
+                    $this->message(sprintf(__("Cleared file %s"), $path));
+                }
+            }
+        }
+
+        $modules->session->redirect($this->wire("page")->url);
+    }
+
 
     public function ___executeNavJson(array $options = array()){
 
@@ -160,7 +210,7 @@ class ClearCacheAdmin extends Process{
         $options['sort'] = false;
         $options['edit'] = '{id}/';
 
-        $numPages = $this->getCacheFiles();
+        $numPages = $this->getCacheNumPages();
 
         $data["pagecache"] = array(
             "id" => "clearpagecache",
@@ -174,6 +224,17 @@ class ClearCacheAdmin extends Process{
                 "name" => __("Clear Markup Cache"),
                 "icon" => "bomb"
                 );
+        }
+
+        $cacheDirs = $this->getCacheDirFiles();
+        if(count($cacheDirs)){
+            foreach($cacheDirs as $filename => $cd){
+                $data[$filename] = array(
+                    "id" => "clearcachedirs/" . $filename,
+                    "name" => __("Clear") . " cache/" . $filename . " ({$cd['type']})",
+                    "icon" => $cd['type'] == "dir" ? "folder" : "file",
+                    );
+            }
         }
 
         $expiringCaches = $this->getExpiringWireCaches();
@@ -192,7 +253,7 @@ class ClearCacheAdmin extends Process{
 
     }
 
-    protected function getCacheFiles(){
+    protected function getCacheNumPages(){
         $path = $this->wire('config')->paths->cache . PageRender::cacheDirName . '/';
         $numPages = 0;
         $dir = null;
@@ -203,6 +264,21 @@ class ClearCacheAdmin extends Process{
         }
         return $numPages;
     }
+
+    protected function getCacheDirFiles(){
+        $path = $this->wire('config')->paths->cache . '/';
+        $numPages = 0;
+        $dir = null;
+        $dirs = array();
+        try { $dir = new \DirectoryIterator($path); } catch(\Exception $e) { }
+        if($dir) foreach($dir as $file) {
+            if($file->isDot() || in_array($file->getFilename(), self::exludeCacheDirFiles)) continue;
+            $dirs[$file->getFilename()] = array("type" => $file->isDir() ? "dir" : "file");
+        }
+        return $dirs;
+    }
+
+
 
     protected function getExpiringWireCaches(){
         $wireCache = $this->wire("cache")->getInfo(false);
@@ -218,4 +294,3 @@ class ClearCacheAdmin extends Process{
     }
 
 }
-

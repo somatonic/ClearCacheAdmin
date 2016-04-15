@@ -4,9 +4,16 @@ Simple ProcessWire helper module to clear various caches in ProcessWire directly
 
 This module adds a new menu item under "Setup" with a submenu that has different infos and option to clear the individual caches.
 
-Additionally you can also use the modules screen to individually clean the caches with further options for the WireCaches.
+Additionally it has its own admin page that's a collection of the various caches available in ProcessWire in one place. See some infos and clear them. WireCache (using $cache) caches in the DB and there no way to clear it from the admin. Now you can delete the entries individually or all in one go.
 
-This way it can also be used by non superusers, just use the "clear-cache-admin" permission that will be created automaticly by this module when installed.
+Supports following cache types:
+
+- Template "Page" Cache (disk file cache)
+- MarkupCache module (file cache)
+- WireCache (DB)
+- Other files and directories found in assets/cache/ path
+
+With this module, it's also possible for non superusers to clear caches. Just use the "clear-cache-admin" permission that will be created automaticly by this module when installed.
 
 ## Requires
 
