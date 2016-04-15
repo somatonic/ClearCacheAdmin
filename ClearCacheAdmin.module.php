@@ -17,6 +17,7 @@ class ClearCacheAdmin extends Process{
             'title' => 'Clear Cache Admin',
             'summary' => 'Tool that helps you clear page cache.',
             'version' => 1,
+            'href' => "https://github.com/somatonic/ClearCacheAdmin",
             'author' => 'Soma',
             'icon' => 'gear',
             'page' => array(
