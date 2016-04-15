@@ -17,7 +17,7 @@
 
         var $submitFiles = $("#wrap_Inputfield_submitfiles").hide();
         $('#clearcachedirs').on("change", function(){
-            $checkboxes = $(this).find("input[type=checkbox]:checked");
+            var $checkboxes = $(this).find("input[type=checkbox]:checked");
             if($checkboxes.length){
                 $submitFiles.fadeIn();
             } else {
@@ -27,7 +27,7 @@
 
         var $submitWireCache = $("#wrap_Inputfield_submitwirecache").hide();
         $('#clearwirecache').on("change", function(){
-            $checkboxes = $(this).find("input[type=checkbox]:checked");
+            var $checkboxes = $(this).find("input[type=checkbox]:checked");
             if($checkboxes.length){
                 $submitWireCache.fadeIn();
             } else {
