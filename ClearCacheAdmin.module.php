@@ -8,7 +8,7 @@
 
 class ClearCacheAdmin extends Process{
 
-    const exludeCacheDirFiles = array("Page", "MarkupHTMLPurifier", "MarkupCache");
+    protected $exludeCacheDirFiles = array("Page", "MarkupHTMLPurifier", "MarkupCache");
 
     /**
      * Return information about this module (required)
@@ -18,7 +18,7 @@ class ClearCacheAdmin extends Process{
         return array(
             'title' => 'Clear Cache Admin',
             'summary' => 'Tool that helps you clear page cache.',
-            'version' => 3,
+            'version' => 4,
             'author' => 'Soma',
             'icon' => 'gear',
             'page' => array(
@@ -153,6 +153,7 @@ class ClearCacheAdmin extends Process{
 
     }
 
+
     public function ___executeClearPageCache(){
         $this->wire('input')->post->clearCache = 1;
         $modules = $this->wire("modules");
@@ -167,6 +168,7 @@ class ClearCacheAdmin extends Process{
         $this->message(sprintf(__("Cleared %d MarkupCache files and dirs."), $numFiles));
         $modules->session->redirect($this->wire("page")->url);
     }
+
 
     public function ___executeClearWireCache(){
         $modules = $this->wire("modules");
@@ -280,7 +282,7 @@ class ClearCacheAdmin extends Process{
         $dirs = array();
         try { $dir = new \DirectoryIterator($path); } catch(\Exception $e) { }
         if($dir) foreach($dir as $file) {
-            if($file->isDot() || in_array($file->getFilename(), self::exludeCacheDirFiles)) continue;
+            if($file->isDot() || in_array($file->getFilename(), $this->exludeCacheDirFiles)) continue;
             $dirs[$file->getFilename()] = array("type" => $file->isDir() ? "dir" : "file");
         }
         return $dirs;
