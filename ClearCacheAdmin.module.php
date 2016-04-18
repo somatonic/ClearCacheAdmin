@@ -18,7 +18,7 @@ class ClearCacheAdmin extends Process{
         return array(
             'title' => 'Clear Cache Admin',
             'summary' => 'Tool that helps you clear page cache.',
-            'version' => 4,
+            'version' => 5,
             'author' => 'Soma',
             'icon' => 'gear',
             'page' => array(
@@ -27,7 +27,7 @@ class ClearCacheAdmin extends Process{
                 'title' => "Cache Admin",
                 ),
             'useNavJSON' => true,
-            'requires' => array('ProcessWire>=2.7.0'),
+            'requires' => array('ProcessWire>=2.6.0'),
             'permission' => "clear-cache-admin",
             'permissions' => array("clear-cache-admin" => "Clear PW Caches from Admin Menu"),
         );
@@ -53,7 +53,8 @@ class ClearCacheAdmin extends Process{
 
         // clear markup cache form, we get this from the module's config inputfields for convenience
         $inputfields = $modules->MarkupCache->getModuleConfigInputfields(array());
-        $inputfields->remove("noExpire"); // remove config inputfield
+        $noExpire = $inputfields->find("name=noExpire")->first;
+        if($noExpire) $inputfields->remove($noExpire); // remove config inputfield
         $form = $modules->InputfieldForm;
         $form->attr("action", "./");
         $submit = $modules->InputfieldSubmit;
@@ -86,16 +87,17 @@ class ClearCacheAdmin extends Process{
                     ));
 
                 foreach($expiringCaches as $key => $cache){
+                    $expires = $cache['expires'] == "selector" ? "selector: {$cache['selector']}" : $cache['expires'];
                     $table->row(array(
                         "<label><input type='checkbox' name='caches[{$cache['name']}]'/> {$cache['name']}</label>",
                         $cache['type'],
-                        $cache['expires'],
+                        $expires,
                         ));
                 }
 
                 $tableMarkup = $modules->InputfieldMarkup;
                 $tableMarkup->label = __('Clear the WireCache ($cache)');
-                $tableMarkup->notes = __("As found in the wire cache DB table except those that never expire. (r)");
+                $tableMarkup->notes = __("As found in the wire cache DB table except those that never expire.");
                 $toggleBtn = "<label>";
                 $toggleBtn .= "<input class='toggle_all' data-target='$wireCacheID' type='checkbox'> ";
                 $toggleBtn .= __("toggle all");
@@ -267,7 +269,7 @@ class ClearCacheAdmin extends Process{
         $path = $this->wire('config')->paths->cache . PageRender::cacheDirName . '/';
         $numPages = 0;
         $dir = null;
-        try { $dir = new \DirectoryIterator($path); } catch(\Exception $e) { }
+        try { $dir = new DirectoryIterator($path); } catch(Exception $e) { }
         if($dir) foreach($dir as $file) {
             if(!$file->isDir() || $file->isDot() || !ctype_digit($file->getFilename())) continue;
             $numPages++;
@@ -280,7 +282,7 @@ class ClearCacheAdmin extends Process{
         $numPages = 0;
         $dir = null;
         $dirs = array();
-        try { $dir = new \DirectoryIterator($path); } catch(\Exception $e) { }
+        try { $dir = new DirectoryIterator($path); } catch(Exception $e) { }
         if($dir) foreach($dir as $file) {
             if($file->isDot() || in_array($file->getFilename(), $this->exludeCacheDirFiles)) continue;
             $dirs[$file->getFilename()] = array("type" => $file->isDir() ? "dir" : "file");
@@ -289,16 +291,23 @@ class ClearCacheAdmin extends Process{
     }
 
     protected function getExpiringWireCaches(){
-        $wireCache = $this->wire("cache")->getInfo(false);
         $expiringCache = array();
+        $wireCache = $this->wire("cache")->getInfo(false);
+        if(!count($wireCache)) return $expiringCache;
+
         foreach($wireCache as $key => $cache){
-            // only show caches with an expires date in future
-            $date = \DateTime::createFromFormat('Y-m-d H:i:s', $cache['expires']);
-            if($date->getTimeStamp() > time()){
+            if($cache['expires'] == "selector"){
                 $expiringCache[] = $cache;
+            } else {
+                 // only show caches with an expires date in future
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $cache['expires']);
+                if($date && $date->getTimeStamp() > time()){
+                    $expiringCache[] = $cache;
+                }
             }
         }
-         return $expiringCache;
+
+        return $expiringCache;
     }
 
 }
