@@ -17,4 +17,4 @@ With this module, it's also possible for non superusers to clear caches. Just us
 
 ## Requires
 
-ProcessWire 2.7+
+ProcessWire 2.6+
